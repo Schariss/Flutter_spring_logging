@@ -15,7 +15,7 @@ class _RegisterState extends State<Register> {
   final _formkey = GlobalKey<FormState>();
   TextEditingController email = TextEditingController();
   TextEditingController password = TextEditingController();
-  String url = "http://localhost:8080/register";
+  String url = "http://ipAdress:8080/register";
 
   void register() async {
     var res = await http.post(url,

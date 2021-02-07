@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dashboard.dart';
 
 class Login extends StatefulWidget {
@@ -19,23 +20,65 @@ class _LoginState extends State<Login> {
   bool islogged = true;
   TextEditingController email = TextEditingController();
   TextEditingController password = TextEditingController();
-  String url = "http://localhost:8080/login";
+  String url = "http://ipAdress:8080/login";
+  Map<String, dynamic> decodedToken;
+  Future<String> _token;
 
+  //verify email and password
+  // void login() async {
+  //   var res = await http.post(url,
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: json.encode({'email': email.text, 'password': password.text}));
+  //   print('status code : ${res.statusCode}');
+  //   print(res);
+  //   if (res.body != "") {
+  //     print('logged in');
+  //     setState(() => islogged = true);
+  //     _formkey.currentState.reset();
+  //     Navigator.push(
+  //         context, MaterialPageRoute(builder: (context) => Dashboard()));
+  //   } else {
+  //     setState(() => islogged = false);
+  //   }
+  // }
+
+  //login with JWT
+  //using the conerence api
+  //login with username and password : JWTAuthorizationFilter, JWT AuthenticationFilter in springboot
   void login() async {
     var res = await http.post(url,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: json.encode({'email': email.text, 'password': password.text}));
+        body: json.encode({'username': email.text, 'password': password.text}));
     print('status code : ${res.statusCode}');
     print(res);
-    if (res.body != "") {
+    if (res.statusCode == 200) {
       print('logged in');
+      print(res.headers['authorization']);
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String token = res.headers['authorization'];
+      setState(() {
+        _token = prefs.setString("token", token).then((bool success) {
+          return _token;
+        });
+        print(_token);
+        print("get token from local Strorage ${prefs.getString('token')}");
+      });
+      // bool isTokenExpired = JwtDecoder.isExpired(token);
+      // DateTime expirationDate = JwtDecoder.getExpirationDate(token);
+      // Duration tokenTime = JwtDecoder.getTokenTime(token);
+      decodedToken = JwtDecoder.decode(token);
+      print('-----------------------------');
+      print(decodedToken);
       setState(() => islogged = true);
       _formkey.currentState.reset();
       Navigator.push(
           context, MaterialPageRoute(builder: (context) => Dashboard()));
     } else {
+      print('wrong credentials');
       setState(() => islogged = false);
     }
   }
@@ -88,12 +131,14 @@ class _LoginState extends State<Login> {
                     validator: (value) {
                       if (value.isEmpty) {
                         setState(() {
-                          _height = 690;
+                          _height = 700;
                         });
                         return 'Email is Empty';
-                      } else if (!value.contains('@')) {
-                        return "must contains @";
-                      } else {
+                      }
+                      // else if (!value.contains('@')) {
+                      //   return "must contains @";
+                      // }
+                      else {
                         return null;
                       }
                     },
@@ -132,12 +177,14 @@ class _LoginState extends State<Login> {
                     validator: (value) {
                       if (value.isEmpty) {
                         setState(() {
-                          _height = 690;
+                          _height = 700;
                         });
                         return 'password is Empty';
-                      } else if (value.length < 6) {
-                        return 'must have 6 or more characters';
-                      } else {
+                      }
+                      // else if (value.length < 6) {
+                      //   return 'must have 6 or more characters';
+                      // }
+                      else {
                         return null;
                       }
                     },
